@@ -4,7 +4,7 @@ const Users = require("../models/user")
 const bcrypt = require('bcrypt');
 const UserSession = require("../models/userSession");
 const { createToken } = require("./authFunctions");
-
+const fs = require('fs');
 const userRegisterInDB = async (req, res) => {
     try {
         // check if email id already exist in db;
@@ -205,7 +205,16 @@ const loginUserInDB = async (req, res) => {
 }
 const imageUploadIndb = async (req, res) => {
     try {
-        const { filename, originalName, path } = req.file
+        // upload file in folder
+
+        const { path } = req.file;
+
+        // find user and update profile image
+        const getUser = await Users.findOne({
+            user_id: req.userInfo.user_id
+        })
+
+        fs.unlinkSync(getUser.profile_image)
 
         const updateImage = await Users.findOneAndUpdate(
             { user_id: req.userInfo.user_id },

@@ -34,7 +34,7 @@ const verifyUserData = async (req, res, next) => {
                 verifyUserToken.error
             )
         }
-        console.log("1111", verifyUserToken)
+
         req.userInfo = verifyUserToken.data
 
         next();
