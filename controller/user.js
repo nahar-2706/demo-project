@@ -65,17 +65,16 @@ const loginUser = async (req, res) => {
 }
 const imageUpload = async (req, res) => {
     try {
-        // const schema = Joi.object({
-        //     file: Joi.any().meta({ swaggerType: 'file' }).required() // Add Joi validation for the file
-        // });
-        // console.log(req.file)
-        // const validateSchema = schema.validate(req, {
-        //     allowUnknown: true,
-        //     abortEarly: false
-        // })
-        // if (validateSchema.error) {
-        //     return responseInvalidArgs(res, validateSchema)
-        // }
+        const schema = Joi.object({
+            title: Joi.string().required(),
+            description: Joi.string().required()
+
+        }).unknown(true);
+
+        const validateSchema = schema.validate(req.body)
+        if (validateSchema.error) {
+            return responseInvalidArgs(res, validateSchema)
+        }
 
 
         return await imageUploadIndb(req, res)
