@@ -2,6 +2,17 @@ const { responseWithError, responseREST } = require("../config/commonFunction")
 const httpStatus = require("../config/httpStatus")
 const Posts = require("../models/posts")
 
+
+/**
+ * ## Get all data of the General Setting ʲˢ
+ *
+ * This Function returns an Object with data key which contain all details of General Settings
+ * @param
+ * context -- which contains req and res object
+ * @example
+ * allGeneralSetting(context)
+ */
+
 const addPostInDB = async (req, res) => {
     try {
 
