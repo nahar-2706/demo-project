@@ -5,6 +5,9 @@ const bcrypt = require('bcrypt');
 const UserSession = require("../models/userSession");
 const { createToken } = require("./authFunctions");
 const fs = require('fs');
+const mongoose = require('mongoose');
+const Posts = require("../models/posts");
+const db = require("../config/dbConnection");
 const userRegisterInDB = async (req, res) => {
     try {
         // check if email id already exist in db;
@@ -13,7 +16,8 @@ const userRegisterInDB = async (req, res) => {
             email_id,
             first_name,
             last_name,
-            password
+            password,
+            company_name
         } = req.body;
 
         const checkUserExist = await Users.findOne({
@@ -40,6 +44,7 @@ const userRegisterInDB = async (req, res) => {
             first_name,
             last_name,
             password: hashedPassword,
+            company_name,
             email_id
         })
 
@@ -70,6 +75,16 @@ const userRegisterInDB = async (req, res) => {
             res,
             getAccessToken.data
         )
+        // // ctreate db for this user
+        // if (mongoose.connection.readyState === 1) {
+        //     mongoose.connection.close();
+        // }
+
+        const createDB = await createUserDB(req, res, userData.user_id)
+        console.log(createDB)
+        if (!createDB.status) {
+            return responseWithError(req, res, createDB.error)
+        }
 
         let dataToreturn = {
             access_token: getAccessToken.data.access_token,
@@ -91,6 +106,43 @@ const userRegisterInDB = async (req, res) => {
     } catch (error) {
         return responseWithError(req, res, error)
     }
+}
+const createUserDB = async (req, res, userId) => {
+    try {
+
+        let dbName = req.body.company_name.replace(" ", "_").toLowerCase()
+        dbName = `${dbName}-${userId}`;
+        // Create a new user-specific database
+        const userDb = mongoose.createConnection(`mongodb://127.0.0.1:27017/${dbName}`, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        });
+
+        // Define and export schemas specific to this tenant's database
+        const userSchema = new mongoose.Schema({
+            version_name: String,
+            version: String
+
+        });
+
+        const Version = userDb.model('Version', userSchema);
+
+        await Version.create({
+            version: "titlw111",
+            version_name: "versionNamemkoert"
+        })
+        return {
+            status: true,
+            data: null
+        };
+    } catch (error) {
+        return {
+            status: false,
+            error
+        }
+    }
+
+
 }
 const createSessionInDB = async (req, res, userId) => {
     try {
@@ -235,8 +287,64 @@ const imageUploadIndb = async (req, res) => {
         return responseWithError(req, res, error)
     }
 }
+const getUserDataById = async (req, res) => {
+    try {
+        let data = await Users.findOne({
+            user_id: req.params.id
+        })
+        return responseREST(
+            res,
+            httpStatus.SUCCESS,
+            "User Data",
+            data
+        )
+    } catch (error) {
+        return responseWithError(req, res, error)
+    }
+}
+const getAllUserFromDB = async (req, res) => {
+    try {
+        let condition = "";
+        if (req.query.search_text && req.query.search_text !== "") {
+            condition =
+            {
+                // $or: [
+                //     { first_name: { $regex: req.query.search_text, $options: 'i' } },
+                //     { last_name: { $regex: req.query.search_text, $options: 'i' } },
+                //     { email_id: { $regex: req.query.search_text, $options: 'i' } },
+                //     { company_name: { $regex: req.query.search_text, $options: 'i' } },
+                // ]
+                first_name: {
+                    $regex: req.query.search_text,
+                    options: 'i'
+                }
+            }
+        }
+
+
+        let data = await Users.find({
+            first_name: {
+                $regex: req.query.search_text,
+                $options: 'i'
+            }
+        })
+            .skip(parseInt(req.query.skip))
+            .limit(parseInt(req.query.take))
+        return responseREST(
+            res,
+            httpStatus.SUCCESS,
+            "User Data",
+            data
+        )
+
+    } catch (error) {
+        return responseWithError(req, res, error)
+    }
+}
 module.exports = {
     userRegisterInDB,
     loginUserInDB,
-    imageUploadIndb
+    imageUploadIndb,
+    getUserDataById,
+    getAllUserFromDB
 }

@@ -20,6 +20,14 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    company_name: {
+        type: String,
+        required: true
+    },
+    db_url: {
+        type: String,
+        required: false
+    },
     password: {
         type: String,
         required: true

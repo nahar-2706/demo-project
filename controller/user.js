@@ -1,6 +1,7 @@
-const { userRegisterInDB, loginUserInDB, imageUploadIndb } = require("../business-rule/user")
+const { userRegisterInDB, loginUserInDB, imageUploadIndb, getUserDataById, getAllUserFromDB } = require("../business-rule/user")
 const { responseWithError, responseInvalidArgs } = require("../config/commonFunction")
 const Joi = require('joi')
+Joi.objectId = require('joi-objectid')(Joi)
 const userRegister = async (req, res) => {
     try {
 
@@ -25,6 +26,7 @@ const userRegister = async (req, res) => {
                     'any.required': 'Confirm Password is required',
                     'any.only': 'Confirm Password must match Password'
                 }),
+            company_name: Joi.string().min(3).max(30).required(),
         })
 
         const validateSchema = schema.validate(req.body)
@@ -32,10 +34,11 @@ const userRegister = async (req, res) => {
             return responseInvalidArgs(res, validateSchema)
         }
 
-        return await userRegisterInDB(req, res)
+        return userRegisterInDB(req, res)
 
 
     } catch (error) {
+        console.log(error)
         return responseWithError(req, res, error)
     }
 }
@@ -83,8 +86,41 @@ const imageUpload = async (req, res) => {
         return responseWithError(req, res, error)
     }
 }
+const getUserById = async (req, res) => {
+    try {
+        const schema = Joi.object({
+            id: Joi.objectId().required()
+        })
+        const validateSchema = schema.validate(req.params)
+        if (validateSchema.error) {
+            return responseInvalidArgs(res, validateSchema)
+        }
+        return getUserDataById(req, res)
+    } catch (error) {
+        return responseWithError(req, res, error)
+    }
+}
+const getAllUser = async (req, res) => {
+    try {
+        console.log("req", req.query)
+        const schema = Joi.object({
+            search_text: Joi.string().allow(null, ''),
+            skip: Joi.number(),
+            take: Joi.number(),
+        })
+        const validateSchema = schema.validate(req.query)
+        if (validateSchema.error) {
+            return responseInvalidArgs(res, validateSchema)
+        }
+        return getAllUserFromDB(req, res)
+    } catch (error) {
+        return responseWithError(req, res, error)
+    }
+}
 module.exports = {
     userRegister,
     loginUser,
-    imageUpload
+    imageUpload,
+    getUserById,
+    getAllUser
 }
